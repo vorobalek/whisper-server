@@ -1,0 +1,52 @@
+name: Release multi-arch Docker image
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  build_amd64:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+      - name: Build and push AMD64 image
+        run: |
+          docker build -f ./src/Whisper/Dockerfile -t vorobalek/whisper:amd64 .
+          docker push vorobalek/whisper:amd64
+
+  build_arm64:
+    runs-on: ubuntu-24.04-arm
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+      - name: Build and push ARM64 image
+        run: |
+          docker build -f ./src/Whisper/Dockerfile -t vorobalek/whisper:arm64 .
+          docker push vorobalek/whisper:arm64
+
+  create_manifest:
+    needs: [build_amd64, build_arm64]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+      - name: Create and push multi-arch manifest
+        run: |
+          docker buildx imagetools create \
+            -t vorobalek/whisper:latest \
+            vorobalek/whisper:arm64 \
+            vorobalek/whisper:amd64
