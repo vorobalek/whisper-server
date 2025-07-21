@@ -21,16 +21,16 @@
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="FluentValidation.AspNetCore"/>
-        <PackageReference Include="JsonSubTypes"/>
-        <PackageReference Include="Lib.AspNetCore.WebPush"/>
-        <PackageReference Include="Microsoft.AspNetCore.Mvc.NewtonsoftJson"/>
-        <PackageReference Include="Microsoft.AspNetCore.SignalR.Protocols.NewtonsoftJson"/>
-        <PackageReference Include="Microsoft.AspNetCore.SignalR.StackExchangeRedis"/>
-        <PackageReference Include="MongoDB.Driver"/>
-        <PackageReference Include="NSec.Cryptography"/>
-        <PackageReference Include="prometheus-net.AspNetCore"/>
-        <PackageReference Include="StackExchange.Redis"/>
+        <PackageReference Include="FluentValidation.AspNetCore" />
+        <PackageReference Include="JsonSubTypes" />
+        <PackageReference Include="Lib.AspNetCore.WebPush" />
+        <PackageReference Include="Microsoft.AspNetCore.Mvc.NewtonsoftJson" />
+        <PackageReference Include="Microsoft.AspNetCore.SignalR.Protocols.NewtonsoftJson" />
+        <PackageReference Include="Microsoft.AspNetCore.SignalR.StackExchangeRedis" />
+        <PackageReference Include="MongoDB.Driver" />
+        <PackageReference Include="NSec.Cryptography" />
+        <PackageReference Include="prometheus-net.AspNetCore" />
+        <PackageReference Include="StackExchange.Redis" />
     </ItemGroup>
 
 </Project>
