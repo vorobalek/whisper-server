@@ -48,7 +48,7 @@ public class CallRequestBaseProcessorTests
         var processor = new CallRequestBaseProcessor();
 
         // Act & Assert
-        await Assert.ThrowsExceptionAsync<ArgumentException>(async () =>
+        await Assert.ThrowsExactlyAsync<ArgumentException>(async () =>
                 await (processor as ICallRequestProcessor)
                     .ProcessAsync(
                         requestMock.Object,

@@ -140,7 +140,7 @@ public class SignalV1HubTests
         var hub = CreateHub();
 
         // Act & Assert
-        await Assert.ThrowsExceptionAsync<ApplicationException>(async () =>
+        await Assert.ThrowsExactlyAsync<ApplicationException>(async () =>
                 await hub.CallAsync(requestMock.Object),
             expectedLogMessage);
         requestMock.VerifyAll();

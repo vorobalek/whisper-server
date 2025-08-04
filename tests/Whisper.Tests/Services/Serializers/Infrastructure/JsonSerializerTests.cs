@@ -14,6 +14,6 @@ public class JsonSerializerTests
         var serializer = new JsonSerializer<object>(settings);
 
         // Act & Assert
-        Assert.ThrowsException<ArgumentNullException>(() => serializer.Serialize(null!));
+        Assert.ThrowsExactly<ArgumentNullException>(() => serializer.Serialize(null!));
     }
 }
