@@ -31,7 +31,7 @@ public class CallRequestTests
             }
         };
 
-        Assert.ThrowsException<InvalidOperationException>(
+        Assert.ThrowsExactly<InvalidOperationException>(
             () => request.SetServerUnixTimeMilliseconds(serverUnixTimeMilliseconds),
             "ServerUnixTimeMilliseconds has already been set");
     }

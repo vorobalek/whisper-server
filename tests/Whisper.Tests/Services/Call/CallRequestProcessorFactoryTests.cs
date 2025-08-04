@@ -42,7 +42,7 @@ public class CallRequestProcessorFactoryTests
         var factory = new CallRequestProcessorFactory([]);
 
         // Act & Assert
-        Assert.ThrowsException<InvalidOperationException>(() => factory.GetForRequest(requestMock.Object));
+        Assert.ThrowsExactly<InvalidOperationException>(() => factory.GetForRequest(requestMock.Object));
     }
 
     [TestMethod]
@@ -64,6 +64,6 @@ public class CallRequestProcessorFactoryTests
         ]);
 
         // Act & Assert
-        Assert.ThrowsException<InvalidOperationException>(() => factory.GetForRequest(requestMock.Object));
+        Assert.ThrowsExactly<InvalidOperationException>(() => factory.GetForRequest(requestMock.Object));
     }
 }
