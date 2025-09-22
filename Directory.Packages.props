@@ -8,7 +8,7 @@
         <PackageVersion Include="JsonSubTypes" Version="2.0.1" />
         <PackageVersion Include="Lib.AspNetCore.WebPush" Version="2.2.2" />
         <PackageVersion Include="Microsoft.AspNetCore.Mvc.NewtonsoftJson" Version="9.0.9" />
-        <PackageVersion Include="Microsoft.AspNetCore.SignalR.Protocols.NewtonsoftJson" Version="9.0.8" />
+        <PackageVersion Include="Microsoft.AspNetCore.SignalR.Protocols.NewtonsoftJson" Version="9.0.9" />
         <PackageVersion Include="Microsoft.AspNetCore.SignalR.StackExchangeRedis" Version="9.0.9" />
         <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="17.14.1" />
         <PackageVersion Include="MongoDB.Driver" Version="3.5.0" />
