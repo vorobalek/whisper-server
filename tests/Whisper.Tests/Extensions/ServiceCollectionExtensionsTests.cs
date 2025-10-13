@@ -51,11 +51,12 @@ public class ServiceCollectionExtensionsTests
         foreach (var requestType in allRequestTypes)
         {
             var registeredProcessors = processors.Where(p => p.CallRequestType == requestType).ToList();
-            Assert.IsTrue(
-                registeredProcessors.Count != 0,
+            Assert.IsNotEmpty(
+                registeredProcessors,
                 $"Processor for type {requestType.Name} is not registered.");
-            Assert.IsTrue(
-                registeredProcessors.Count == 1,
+            Assert.HasCount(
+                1,
+                registeredProcessors,
                 $"There are more than one processor for type {requestType} is registered ({string.Join(", ", registeredProcessors.Select(x => x.GetType().Name))}).");
         }
     }
