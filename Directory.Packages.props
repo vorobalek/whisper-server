@@ -16,6 +16,6 @@
         <PackageVersion Include="MSTest" Version="4.0.2" />
         <PackageVersion Include="NSec.Cryptography" Version="25.4.0" />
         <PackageVersion Include="prometheus-net.AspNetCore" Version="8.2.1" />
-        <PackageVersion Include="StackExchange.Redis" Version="2.9.32" />
+        <PackageVersion Include="StackExchange.Redis" Version="2.10.1" />
     </ItemGroup>
 </Project>
