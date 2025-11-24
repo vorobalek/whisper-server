@@ -54,7 +54,7 @@ internal abstract class RedisStorage<TValue> : IStorage<string, TValue>
         return await _database.StringSetAsync(
             GetKey(key),
             _serializer.Serialize(value),
-            expiry);
+            expiry ?? Expiration.Default);
     }
 
     protected virtual async Task<TValue?> ReadInternalAsync(
