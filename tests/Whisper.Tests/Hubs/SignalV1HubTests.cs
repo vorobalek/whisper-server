@@ -129,12 +129,18 @@ public class SignalV1HubTests
             .ThrowsAsync(exception)
             .Verifiable(Times.Once);
         _loggerMock
+            .Setup(logger => logger.IsEnabled(LogLevel.Error))
+            .Returns(true)
+            .Verifiable(Times.Once);
+        _loggerMock
             .Setup(logger => logger.Log(
                 LogLevel.Error,
+#pragma warning disable CA1873
                 It.IsAny<EventId>(),
-                It.Is<It.IsAnyType>((@object, type) => @object.ToString() == expectedLogMessage && type.Name == "FormattedLogValues"),
+                It.Is<It.IsAnyType>((state, _) => state.ToString() == expectedLogMessage),
                 exception,
                 It.IsAny<Func<It.IsAnyType, Exception?, string>>()))
+#pragma warning restore CA1873
             .Verifiable(Times.Once);
 
         var hub = CreateHub();

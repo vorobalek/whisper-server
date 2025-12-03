@@ -6,7 +6,7 @@ using Whisper.Services.GlobalCancellationToken;
 namespace Whisper.Controllers;
 
 [Route("api/v1/[controller]")]
-public class CallController(
+public partial class CallController(
     ICallProcessor callProcessor,
     ILogger<CallController> logger,
     IGlobalCancellationTokenSource cancellationTokenSource) : ControllerBase
@@ -21,8 +21,11 @@ public class CallController(
         }
         catch (Exception exception)
         {
-            logger.LogError(exception, "Internal server error");
+            LogInternalServerError(logger, exception);
             return StatusCode(500, "Internal server error");
         }
     }
+
+    [LoggerMessage(LogLevel.Error, "Internal server error")]
+    static partial void LogInternalServerError(ILogger<CallController> logger, Exception exception);
 }

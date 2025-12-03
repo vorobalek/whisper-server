@@ -11,7 +11,7 @@ public static class Unique
 
     public static TEnum Enum<TEnum>() where TEnum : struct, Enum
     {
-        return RandomNumberGenerator.GetItems<TEnum>(System.Enum.GetValues<TEnum>(), 1)[0];
+        return RandomNumberGenerator.GetItems(System.Enum.GetValues<TEnum>(), 1)[0];
     }
 
     public static string String(int? lenght = null, string choices = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_")
