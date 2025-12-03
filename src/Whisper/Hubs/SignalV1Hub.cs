@@ -7,7 +7,7 @@ using Whisper.Storage;
 
 namespace Whisper.Hubs;
 
-public class SignalV1Hub(
+public partial class SignalV1Hub(
     ISignalRDataStorage signalRDataStorage,
     ICallProcessor callProcessor,
     ILogger<SignalV1Hub> logger,
@@ -34,7 +34,7 @@ public class SignalV1Hub(
         }
         catch (Exception exception)
         {
-            logger.LogError(exception, "Internal server error");
+            LogInternalServerError(logger, exception);
             throw new ApplicationException("Internal server error");
         }
 
@@ -51,4 +51,7 @@ public class SignalV1Hub(
             cancellationToken,
             TimeSpan.FromMinutes(2));
     }
+
+    [LoggerMessage(LogLevel.Error, "Internal server error")]
+    static partial void LogInternalServerError(ILogger<SignalV1Hub> logger, Exception exception);
 }

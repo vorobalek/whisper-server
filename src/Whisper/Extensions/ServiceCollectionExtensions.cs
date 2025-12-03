@@ -33,121 +33,124 @@ namespace Whisper.Extensions;
 
 internal static class ServiceCollectionExtensions
 {
-    public static IServiceCollection AddCryptography(this IServiceCollection services)
+    extension(IServiceCollection services)
     {
-        return services
-            .AddScoped<ICrypto, Crypto>();
-    }
+        public IServiceCollection AddCryptography()
+        {
+            return services
+                .AddScoped<ICrypto, Crypto>();
+        }
 
-    internal static IServiceCollection AddStorage(this IServiceCollection services)
-    {
-        return services
-            .AddSingleton<IConnectionMultiplexer>(_ => ConnectionMultiplexer.Connect(AppVariables.RedisConnectionString))
-            .AddScoped<ISignalRDataStorage, SignalRDataRedisStorage>()
-            .AddSingleton(_ =>
-            {
-                var database = new MongoClient(AppVariables.MongoConnectionString).GetDatabase("whisper");
-                var indexKeysDefinition = Builders<MongoDocument>.IndexKeys.Ascending(doc => doc.ExpireAt);
-
-                const string indexName = "expire_At";
-                var indexOptions = new CreateIndexOptions
+        internal IServiceCollection AddStorage()
+        {
+            return services
+                .AddSingleton<IConnectionMultiplexer>(_ => ConnectionMultiplexer.Connect(AppVariables.RedisConnectionString))
+                .AddScoped<ISignalRDataStorage, SignalRDataRedisStorage>()
+                .AddSingleton(_ =>
                 {
-                    ExpireAfter = TimeSpan.Zero,
-                    Name = indexName
-                };
+                    var database = new MongoClient(AppVariables.MongoConnectionString).GetDatabase("whisper");
+                    var indexKeysDefinition = Builders<MongoDocument>.IndexKeys.Ascending(doc => doc.ExpireAt);
 
-                var subscriptionCollection = database.GetCollection<MongoDocument>(MongoCollectionNames.SubscriptionData);
-                var subscriptionIndexes = subscriptionCollection.Indexes.List().ToList();
-                if (subscriptionIndexes.Any(idx => idx["name"].AsString == indexName))
+                    const string indexName = "expire_At";
+                    var indexOptions = new CreateIndexOptions
+                    {
+                        ExpireAfter = TimeSpan.Zero,
+                        Name = indexName
+                    };
+
+                    var subscriptionCollection = database.GetCollection<MongoDocument>(MongoCollectionNames.SubscriptionData);
+                    var subscriptionIndexes = subscriptionCollection.Indexes.List().ToList();
+                    if (subscriptionIndexes.Any(idx => idx["name"].AsString == indexName))
+                    {
+                        subscriptionCollection.Indexes.DropOne(indexName);
+                    }
+
+                    subscriptionCollection.Indexes.CreateOne(new CreateIndexModel<MongoDocument>(indexKeysDefinition, indexOptions));
+
+                    return database;
+                })
+                .AddScoped<ISubscriptionStorage, SubscriptionMongoStorage>();
+        }
+
+        internal IServiceCollection AddCallProcessing()
+        {
+            return services
+                .AddScoped<ICallProcessor, CallProcessor>()
+                .AddScoped<ICallRequestProcessorFactory, CallRequestProcessorFactory>()
+                .AddCallRequestProcessor<CallRequestBase, CallRequestBaseProcessor>()
+                .AddCallRequestProcessor<UpdateCallRequest, UpdateCallRequestProcessor>()
+                .AddCallRequestProcessor<DialCallRequest, DialCallRequestProcessor>()
+                .AddDefaultTransmittableCallRequestProcessor<OfferCallRequest, OfferCallData>()
+                .AddDefaultTransmittableCallRequestProcessor<AnswerCallRequest, AnswerCallData>()
+                .AddDefaultTransmittableCallRequestProcessor<IceCallRequest, IceCallData>()
+                .AddDefaultTransmittableCallRequestProcessor<CloseCallRequest, CloseCallData>();
+        }
+
+        private IServiceCollection AddCallRequestProcessor<TRequest, TProcessor>()
+            where TRequest : ICallRequest
+            where TProcessor : class, ICallRequestProcessor<TRequest>
+        {
+            return services
+                .AddScoped<ICallRequestProcessor, TProcessor>();
+        }
+
+        private IServiceCollection AddDefaultTransmittableCallRequestProcessor<TRequest, TData>()
+            where TRequest : ICallRequest<TData>
+            where TData : ITransmittableCallData
+        {
+            return services
+                .AddCallRequestProcessor<TRequest, DefaultTransmittableCallRequestProcessor<TRequest, TData>>();
+        }
+
+        internal IServiceCollection AddPushServices()
+        {
+            return services
+                .AddMemoryCache()
+                .AddMemoryVapidTokenCache()
+                .AddPushServiceClient(options =>
                 {
-                    subscriptionCollection.Indexes.DropOne(indexName);
-                }
+                    options.Subject = NotificationVariables.Subject;
+                    options.PublicKey = NotificationVariables.PublicKey;
+                    options.PrivateKey = NotificationVariables.PrivateKey;
+                    options.AutoRetryAfter = true;
+                    options.MaxRetriesAfter = -1;
+                })
+                .AddScoped<IPushServiceClient, DefaultPushServiceClient>()
+                .AddScoped<INotificationProvider, NotificationProvider>();
+        }
 
-                subscriptionCollection.Indexes.CreateOne(new CreateIndexModel<MongoDocument>(indexKeysDefinition, indexOptions));
+        internal IServiceCollection AddSerializers()
+        {
+            return services
+                .AddSingleton(_ => new JsonSerializerSettings())
+                .AddScoped(typeof(IJsonSerializer<>), typeof(JsonSerializer<>))
+                .AddJsonSerializer<SignalRData, SignalRDataJsonSerializer>()
+                .AddJsonSerializer<ICallRequest, CallRequestJsonSerializer>();
+        }
 
-                return database;
-            })
-            .AddScoped<ISubscriptionStorage, SubscriptionMongoStorage>();
-    }
+        private IServiceCollection AddJsonSerializer<T, TSerializer>()
+            where TSerializer : class, IJsonSerializer<T>
+        {
+            return services
+                .AddScoped<IJsonSerializer<T>, TSerializer>();
+        }
 
-    internal static IServiceCollection AddCallProcessing(this IServiceCollection services)
-    {
-        return services
-            .AddScoped<ICallProcessor, CallProcessor>()
-            .AddScoped<ICallRequestProcessorFactory, CallRequestProcessorFactory>()
-            .AddCallRequestProcessor<CallRequestBase, CallRequestBaseProcessor>()
-            .AddCallRequestProcessor<UpdateCallRequest, UpdateCallRequestProcessor>()
-            .AddCallRequestProcessor<DialCallRequest, DialCallRequestProcessor>()
-            .AddDefaultTransmittableCallRequestProcessor<OfferCallRequest, OfferCallData>()
-            .AddDefaultTransmittableCallRequestProcessor<AnswerCallRequest, AnswerCallData>()
-            .AddDefaultTransmittableCallRequestProcessor<IceCallRequest, IceCallData>()
-            .AddDefaultTransmittableCallRequestProcessor<CloseCallRequest, CloseCallData>();
-    }
-
-    private static IServiceCollection AddCallRequestProcessor<TRequest, TProcessor>(this IServiceCollection services)
-        where TRequest : ICallRequest
-        where TProcessor : class, ICallRequestProcessor<TRequest>
-    {
-        return services
-            .AddScoped<ICallRequestProcessor, TProcessor>();
-    }
-
-    private static IServiceCollection AddDefaultTransmittableCallRequestProcessor<TRequest, TData>(this IServiceCollection services)
-        where TRequest : ICallRequest<TData>
-        where TData : ITransmittableCallData
-    {
-        return services
-            .AddCallRequestProcessor<TRequest, DefaultTransmittableCallRequestProcessor<TRequest, TData>>();
-    }
-
-    internal static IServiceCollection AddPushServices(this IServiceCollection services)
-    {
-        return services
-            .AddMemoryCache()
-            .AddMemoryVapidTokenCache()
-            .AddPushServiceClient(options =>
-            {
-                options.Subject = NotificationVariables.Subject;
-                options.PublicKey = NotificationVariables.PublicKey;
-                options.PrivateKey = NotificationVariables.PrivateKey;
-                options.AutoRetryAfter = true;
-                options.MaxRetriesAfter = -1;
-            })
-            .AddScoped<IPushServiceClient, DefaultPushServiceClient>()
-            .AddScoped<INotificationProvider, NotificationProvider>();
-    }
-
-    internal static IServiceCollection AddSerializers(this IServiceCollection services)
-    {
-        return services
-            .AddSingleton(_ => new JsonSerializerSettings())
-            .AddScoped(typeof(IJsonSerializer<>), typeof(JsonSerializer<>))
-            .AddJsonSerializer<SignalRData, SignalRDataJsonSerializer>()
-            .AddJsonSerializer<ICallRequest, CallRequestJsonSerializer>();
-    }
-
-    private static IServiceCollection AddJsonSerializer<T, TSerializer>(this IServiceCollection services)
-        where TSerializer : class, IJsonSerializer<T>
-    {
-        return services
-            .AddScoped<IJsonSerializer<T>, TSerializer>();
-    }
-
-    internal static IServiceCollection AddValidators(this IServiceCollection services)
-    {
-        return services
-            .AddTransient<IValidator<ICallRequest>, CallRequestValidator>()
-            .AddTransient<IValidator<UpdateCallRequest>, CallRequestValidator<UpdateCallRequest, UpdateCallData>>()
-            .AddTransient<IValidator<UpdateCallData>, UpdateCallDataValidator>()
-            .AddTransient<IValidator<DialCallRequest>, CallRequestValidator<DialCallRequest, DialCallData>>()
-            .AddTransient<IValidator<DialCallData>, DialCallDataValidator>()
-            .AddTransient<IValidator<OfferCallRequest>, CallRequestValidator<OfferCallRequest, OfferCallData>>()
-            .AddTransient<IValidator<OfferCallData>, OfferCallDataValidator>()
-            .AddTransient<IValidator<AnswerCallRequest>, CallRequestValidator<AnswerCallRequest, AnswerCallData>>()
-            .AddTransient<IValidator<AnswerCallData>, AnswerCallDataValidator>()
-            .AddTransient<IValidator<IceCallRequest>, CallRequestValidator<IceCallRequest, IceCallData>>()
-            .AddTransient<IValidator<IceCallData>, IceCallDataValidator>()
-            .AddTransient<IValidator<CloseCallRequest>, CallRequestValidator<CloseCallRequest, CloseCallData>>()
-            .AddTransient<IValidator<CloseCallData>, CloseCallDataValidator>();
+        internal IServiceCollection AddValidators()
+        {
+            return services
+                .AddTransient<IValidator<ICallRequest>, CallRequestValidator>()
+                .AddTransient<IValidator<UpdateCallRequest>, CallRequestValidator<UpdateCallRequest, UpdateCallData>>()
+                .AddTransient<IValidator<UpdateCallData>, UpdateCallDataValidator>()
+                .AddTransient<IValidator<DialCallRequest>, CallRequestValidator<DialCallRequest, DialCallData>>()
+                .AddTransient<IValidator<DialCallData>, DialCallDataValidator>()
+                .AddTransient<IValidator<OfferCallRequest>, CallRequestValidator<OfferCallRequest, OfferCallData>>()
+                .AddTransient<IValidator<OfferCallData>, OfferCallDataValidator>()
+                .AddTransient<IValidator<AnswerCallRequest>, CallRequestValidator<AnswerCallRequest, AnswerCallData>>()
+                .AddTransient<IValidator<AnswerCallData>, AnswerCallDataValidator>()
+                .AddTransient<IValidator<IceCallRequest>, CallRequestValidator<IceCallRequest, IceCallData>>()
+                .AddTransient<IValidator<IceCallData>, IceCallDataValidator>()
+                .AddTransient<IValidator<CloseCallRequest>, CallRequestValidator<CloseCallRequest, CloseCallData>>()
+                .AddTransient<IValidator<CloseCallData>, CloseCallDataValidator>();
+        }
     }
 }
